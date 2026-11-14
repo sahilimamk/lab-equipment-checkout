@@ -28,6 +28,12 @@ code, ran the tests, and fixed what the test runs surfaced.
    nothing in the code ever loaded a `.env` file. Both were fixed
    after the review (test backdates both columns; `dotenv` added and
    loaded in `src/db.ts` and `scripts/migrate.js`).
+4. A live run caught one more: `npm run build` emitted
+   `dist/src/index.js` instead of `dist/index.js` because the
+   TypeScript config included the test files, so the server would not
+   start from the built output. Fixed with a build-only tsconfig and
+   a separate test tsconfig; the build and all 19 tests were re-run
+   after the fix.
 
 **What I wrote entirely myself:** the decisions in `DECISIONS.md`
 (including the retire semantics, decision 5), the honest

@@ -1,5 +1,7 @@
 # Lab Equipment Checkout
 
+**Repo:** https://github.com/sahilimamk/lab-equipment-checkout
+
 Students borrow lab equipment (oscilloscopes, multimeters, dev boards).
 Lab assistants manage the inventory. A checkout is due 7 days after it
 starts; after that it is overdue.
