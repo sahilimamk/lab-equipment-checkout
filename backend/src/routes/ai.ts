@@ -43,7 +43,7 @@ aiRouter.post('/tip', async (req, res, next) => {
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 120 }
+          generationConfig: { maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } }
         })
       }
     );
