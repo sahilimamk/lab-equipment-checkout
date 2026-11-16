@@ -30,6 +30,12 @@ export default function App() {
   const [reportStatus, setReportStatus] = useState('loading');
   const [reportError, setReportError] = useState('');
 
+  const [aiTask, setAiTask] = useState('');
+  const [aiEquipmentId, setAiEquipmentId] = useState('');
+  const [aiTip, setAiTip] = useState('');
+  const [aiError, setAiError] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+
   async function loadEquipment() {
     setEqStatus('loading');
     setEqError('');
@@ -204,6 +210,28 @@ export default function App() {
     setBusyId('');
   }
 
+  async function askAi(e: React.FormEvent) {
+    e.preventDefault();
+    setAiTip('');
+    setAiError('');
+    if (aiTask.trim() === '' || aiEquipmentId === '') {
+      setAiError('Pick an item and type what you want to do.');
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const result = await api.getTip(user.id, Number(aiEquipmentId), aiTask.trim());
+      setAiTip(result.tip);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setAiError(err.message);
+      } else {
+        setAiError('Could not get a tip');
+      }
+    }
+    setAiLoading(false);
+  }
+
   const isAssistant = user.role === 'assistant';
   let maxCheckedOut = 1;
   for (const r of report) {
@@ -307,6 +335,30 @@ export default function App() {
               ))}
             </ul>
           )}
+
+          <form className="card" onSubmit={askAi}>
+            <h2>Ask AI (optional)</h2>
+            <label>
+              Equipment
+              <select value={aiEquipmentId} onChange={(e) => setAiEquipmentId(e.target.value)}>
+                <option value="">Pick an item</option>
+                {equipment.map((eq) => (
+                  <option key={eq.id} value={eq.id}>{eq.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              What do you want to do?
+              <input
+                value={aiTask}
+                onChange={(e) => setAiTask(e.target.value)}
+                placeholder="e.g. measure a signal"
+              />
+            </label>
+            {aiError !== '' && <p className="field-error" role="alert">{aiError}</p>}
+            {aiTip !== '' && <p>{aiTip}</p>}
+            <button type="submit" disabled={aiLoading}>{aiLoading ? 'Asking...' : 'Get a tip'}</button>
+          </form>
         </section>
       )}
 

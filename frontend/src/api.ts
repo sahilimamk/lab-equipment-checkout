@@ -98,6 +98,13 @@ export const api = {
   report: async (userId: string) => {
     const body = await request(userId, '/api/report/equipment-usage');
     return body.data as ReportRow[];
+  },
+  getTip: async (userId: string, equipment_id: number, task: string) => {
+    const body = await request(userId, '/api/ai/tip', {
+      method: 'POST',
+      body: JSON.stringify({ equipment_id, task })
+    });
+    return body.data as { equipment_id: number; name: string; tip: string };
   }
 };
 
