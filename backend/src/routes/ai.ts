@@ -4,6 +4,50 @@ import { badRequest, notFound } from '../errors';
 
 export const aiRouter = Router();
 
+async function callGemini(key: string, prompt: string) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+      const geminiRes = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 1024 }
+          }),
+          signal: controller.signal
+        }
+      );
+      clearTimeout(timer);
+      if (!geminiRes.ok) {
+        const detail = await geminiRes.text();
+        console.error('Gemini call failed:', geminiRes.status, detail);
+        if (attempt === 2 || (geminiRes.status !== 503 && geminiRes.status !== 429)) {
+          return { ok: false, detail: detail };
+        }
+      } else {
+        const geminiBody: any = await geminiRes.json();
+        const tip = geminiBody.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+        if (tip !== '') {
+          return { ok: true, tip: tip, detail: '' };
+        }
+        return { ok: false, detail: '' };
+      }
+    } catch (err) {
+      clearTimeout(timer);
+      console.error('Gemini call error:', err);
+      if (attempt === 2) {
+        return { ok: false, detail: '' };
+      }
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  return { ok: false, detail: '' };
+}
+
 aiRouter.post('/tip', async (req, res, next) => {
   try {
     const equipment_id = Number(req.body.equipment_id);
@@ -36,28 +80,11 @@ aiRouter.post('/tip', async (req, res, next) => {
       ' (' + item.total_units + ' units owned, ' + available + ' available). ' +
       'The student wants to: ' + task + '. ' +
       'In 2 short sentences, say if this equipment fits the job and give one safety or care tip. Use plain simple English.';
-    const geminiRes = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 1024 }
-        })
-      }
-    );
-    if (!geminiRes.ok) {
-      const detail = await geminiRes.text();
-      console.error('Gemini call failed:', geminiRes.status, detail);
-      return res.status(502).json({ error: { code: 'AI_FAILED', message: 'Gemini did not answer. Try again later.', detail: detail.slice(0, 300) } });
+    const result = await callGemini(key, prompt);
+    if (!result.ok) {
+      return res.status(502).json({ error: { code: 'AI_FAILED', message: 'Gemini did not answer. Try again later.', detail: result.detail.slice(0, 300) } });
     }
-    const geminiBody: any = await geminiRes.json();
-    const tip = geminiBody.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-    if (tip === '') {
-      return res.status(502).json({ error: { code: 'AI_FAILED', message: 'Gemini did not answer. Try again later.' } });
-    }
-    res.json({ data: { equipment_id: item.id, name: item.name, tip: tip } });
+    res.json({ data: { equipment_id: item.id, name: item.name, tip: result.tip } });
   } catch (err) {
     next(err);
   }
