@@ -1,6 +1,3 @@
--- Seed users + equipment. Idempotent (ON CONFLICT DO NOTHING).
--- X-User-Id header values are the ids below — no login needed (brief §2).
-
 INSERT INTO users (id, name, role) VALUES
   ('stu-aria',  'Aria Sharma',   'student'),
   ('stu-rohan', 'Rohan Verma',   'student'),
