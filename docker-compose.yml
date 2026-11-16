@@ -9,7 +9,6 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Runs once, on first start, on an empty volume:
       - ./backend/db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql
       - ./backend/db/seeds/seed.sql:/docker-entrypoint-initdb.d/002_seed.sql
     healthcheck:
@@ -30,7 +29,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # Run the API too with: docker compose --profile with-api up --build
     profiles: ["with-api"]
 
 volumes:

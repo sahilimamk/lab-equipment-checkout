@@ -42,3 +42,12 @@ and the final review of every endpoint against the brief's rules
 (stock never below zero, ownership, 7-day due date, case-insensitive
 names). The ideas and the verification are mine; the AI did the
 typing-heavy drafting.
+
+**Rewrite on 16 November 2026:** after the first draft I rewrote the
+code in a plain beginner style, in my own words, with no comments in
+the code files, so I can explain every line in the follow-up without
+AI. The rewrite kept the same API, the same database tables and the
+same 19 tests. It removed the helper that hid the transaction
+(`withTx`), the generic `query<T>` helper, and the `FILTER` aggregate
+in the report. Borrow and return now show BEGIN, COMMIT and ROLLBACK
+in the route itself, and the report uses a plain `SUM(CASE WHEN ...)`.

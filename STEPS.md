@@ -34,10 +34,10 @@ Indexes (why each one exists):
 - `equipment.ts` — list (available = total − active checkouts, computed
   in SQL), create (assistants only, duplicate name → 409), retire.
 - `checkouts.ts` — borrow, list (paginated), view one, return.
-- `report.ts` — one query: `LEFT JOIN` + `COUNT … FILTER` for checked
+- `report.ts` — one query: `LEFT JOIN` + `SUM(CASE WHEN ...)` for checked
   out and overdue per item.
-- `db.ts` — one Postgres pool; `withTx` runs a function inside a
-  transaction (all or nothing).
+- `db.ts` — one Postgres pool and a small `query` helper. Borrow and
+  return open a transaction themselves with BEGIN, COMMIT and ROLLBACK.
 
 **The two rules that matter most:**
 1. *Stock never below zero.* Borrow locks the equipment row
