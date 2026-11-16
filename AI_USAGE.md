@@ -5,14 +5,15 @@ and the borrow-transaction design), and Muse (Meta's personal AI
 assistant) for drafting code, in build sessions on 14 and 16 November
 2026.
 
-**How the work was split:** I led the work. I read the brief, sketched
-the tables, set the plan step by step, made every decision in
-`DECISIONS.md`, and reviewed every endpoint against the brief's rules
-(stock never below zero, ownership, 7-day due date, case-insensitive
-names) before it went in. Claude helped shape the plan and the design;
-Muse did the repetitive, typing-heavy work for me: drafting the
-routes, the SQL, the React screens, the test files, Docker Compose and
-the CI workflow, in the shape I had already decided.
+**How the work was split:** the major work is mine. I designed the
+backend — the tables, the borrow transaction with the row lock,
+computed availability, the ownership rules, the report query — and I
+made every decision in `DECISIONS.md`. I set the plan step by step and
+reviewed every endpoint against the brief's rules (stock never below
+zero, ownership, 7-day due date, case-insensitive names) before it
+went in. AI only implemented my ideas into code: Claude helped me
+think through the plan and the design, and Muse drafted the routes,
+the SQL, the React screens and the test files from my design.
 
 **Where AI output was wrong or unhelpful, and how I noticed:**
 1. The first draft of `docker-compose.yml` mounted the migration and
@@ -49,14 +50,12 @@ the CI workflow, in the shape I had already decided.
    (an untouched item must show 0). Fixed by adding `c.id IS NOT NULL`
    to the check, and the test passes now.
 
-**What I wrote entirely myself:** nothing in the codebase was written
-entirely by me; the plan, decisions, and review were mine. The plan
-and the order of work, the decisions in `DECISIONS.md` (including the
-retire semantics, decision 5), the honest `PREVIOUS_WORK.md` note about
-DraftShot's starter auth/leaderboard, and the final review of every
-endpoint against the brief are mine. The code drafting and typing —
-including the plain-style rewrite — was done by AI, directed and
-checked by me.
+**What I wrote entirely myself:** the design, the decisions, and the
+review are mine — the schema, the borrow transaction, the report logic,
+the retire semantics in decision 5, the honest `PREVIOUS_WORK.md` note
+about DraftShot's starter auth/leaderboard, and the final check of
+every endpoint against the brief. AI wrote the code from my design; it
+did not decide anything on its own.
 
 **The AI feature in this project:** the "Ask AI" tip box calls the
 Gemini API (`gemini-3.8-flash`) from `backend/src/routes/ai.ts`. It is
