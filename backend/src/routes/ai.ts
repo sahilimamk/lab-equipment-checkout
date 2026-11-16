@@ -5,13 +5,12 @@ import { badRequest, notFound } from '../errors';
 export const aiRouter = Router();
 
 async function callGemini(key: string, prompt: string) {
-  const models = ['gemini-3.8-flash', 'gemini-2.5-flash'];
-  for (const model of models) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30000);
     try {
       const geminiRes = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
@@ -25,8 +24,8 @@ async function callGemini(key: string, prompt: string) {
       clearTimeout(timer);
       if (!geminiRes.ok) {
         const detail = await geminiRes.text();
-        console.error('Gemini call failed:', model, geminiRes.status, detail);
-        if (model === models[models.length - 1]) {
+        console.error('Gemini call failed:', geminiRes.status, detail);
+        if (attempt === 2 || (geminiRes.status !== 503 && geminiRes.status !== 429)) {
           return { ok: false, detail: detail };
         }
       } else {
@@ -39,11 +38,12 @@ async function callGemini(key: string, prompt: string) {
       }
     } catch (err) {
       clearTimeout(timer);
-      console.error('Gemini call error:', model, err);
-      if (model === models[models.length - 1]) {
+      console.error('Gemini call error:', err);
+      if (attempt === 2) {
         return { ok: false, detail: '' };
       }
     }
+    await new Promise((r) => setTimeout(r, 3000));
   }
   return { ok: false, detail: '' };
 }
