@@ -37,7 +37,7 @@ aiRouter.post('/tip', async (req, res, next) => {
       'The student wants to: ' + task + '. ' +
       'In 2 short sentences, say if this equipment fits the job and give one safety or care tip. Use plain simple English.';
     const geminiRes = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
@@ -50,7 +50,7 @@ aiRouter.post('/tip', async (req, res, next) => {
     if (!geminiRes.ok) {
       const detail = await geminiRes.text();
       console.error('Gemini call failed:', geminiRes.status, detail);
-      return res.status(502).json({ error: { code: 'AI_FAILED', message: 'Gemini did not answer. Try again later.', detail: detail.slice(0, 300) } });
+      return res.status(502).json({ error: { code: 'AI_FAILED', message: 'Gemini did not answer. Try again later.' } });
     }
     const geminiBody: any = await geminiRes.json();
     const tip = geminiBody.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';

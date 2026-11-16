@@ -56,7 +56,7 @@ the final review of every endpoint against the brief. The decisions and
 the checking are mine; the AI did the repetitive drafting and typing.
 
 **The AI feature in this project:** the "Ask AI" tip box calls the
-Gemini API (`gemini-2.0-flash`) from `backend/src/routes/ai.ts`. It is
+Gemini API (`gemini-3.8-flash`) from `backend/src/routes/ai.ts`. It is
 a small extra I chose, kept apart from the Must items, and it is off
 without a `GEMINI_API_KEY`. I decided what it should do, what it
 should ask, and that it must fail clearly with 503 instead of breaking
