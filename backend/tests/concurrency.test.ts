@@ -4,11 +4,6 @@ import { query } from '../src/db';
 
 const app = createApp();
 
-/**
- * Stretch §11: two students race for the last unit.
- * Exactly one must get 201, the other 409 NOT_AVAILABLE —
- * stock must never go below zero, even under concurrency.
- */
 describe('concurrent borrow of the last unit', () => {
   it('exactly one succeeds', async () => {
     const created = await request(app)
@@ -28,7 +23,7 @@ describe('concurrent borrow of the last unit', () => {
     const loser = a.status === 409 ? a : b;
     expect(loser.body.error.code).toBe('NOT_AVAILABLE');
 
-    const active = await query<any>(
+    const active = await query(
       'SELECT COUNT(*)::int AS n FROM checkouts WHERE equipment_id = $1 AND returned_at IS NULL',
       [id]
     );

@@ -76,7 +76,7 @@ describe('POST /api/equipment', () => {
 
 describe('PATCH /api/equipment/:id/retire', () => {
   it('retired equipment cannot be borrowed', async () => {
-    const [eq] = await query<any>("SELECT id FROM equipment WHERE name = 'Multimeter'");
+    const [eq] = await query("SELECT id FROM equipment WHERE name = 'Multimeter'");
     const retire = await request(app)
       .patch(`/api/equipment/${eq.id}/retire`)
       .set(asAssistant);

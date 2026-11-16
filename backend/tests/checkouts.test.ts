@@ -8,7 +8,7 @@ const rohan = { 'X-User-Id': 'stu-rohan' };
 const assistant = { 'X-User-Id': 'asst-rahul' };
 
 async function equipmentId(name: string): Promise<number> {
-  const [row] = await query<any>('SELECT id FROM equipment WHERE name = $1', [name]);
+  const [row] = await query('SELECT id FROM equipment WHERE name = $1', [name]);
   return row.id;
 }
 
@@ -27,7 +27,7 @@ describe('POST /api/checkouts (borrow)', () => {
   });
 
   it('borrowing the last unit then borrowing again is 409 NOT_AVAILABLE (failure case)', async () => {
-    const id = await equipmentId('Raspberry Pi 4 Kit'); // 2 units
+    const id = await equipmentId('Raspberry Pi 4 Kit'); 
     await request(app).post('/api/checkouts').set(aria).send({ equipment_id: id });
     await request(app).post('/api/checkouts').set(rohan).send({ equipment_id: id });
     const third = await request(app)
@@ -86,7 +86,6 @@ describe('POST /api/checkouts/:id/return', () => {
     expect(ret.status).toBe(200);
     expect(ret.body.data.returned_at).toBeTruthy();
 
-    // Available really goes back up after a return.
     const list = await request(app).get('/api/equipment').set(aria);
     expect(list.body.data.find((e: any) => e.id === id).available_units).toBe(5);
 
@@ -111,7 +110,7 @@ describe('POST /api/checkouts/:id/return', () => {
 
 describe('GET /api/checkouts pagination', () => {
   it('paginates with stable ordering (borrowed_at DESC, id DESC)', async () => {
-    const id = await equipmentId('Multimeter'); // 5 units
+    const id = await equipmentId('Multimeter'); 
     for (let i = 0; i < 3; i++) {
       await request(app).post('/api/checkouts').set(aria).send({ equipment_id: id });
     }
@@ -121,6 +120,6 @@ describe('GET /api/checkouts pagination', () => {
     expect(p1.body.data.length).toBe(2);
     expect(p2.body.data.length).toBe(1);
     const ids = [...p1.body.data, ...p2.body.data].map((c: any) => c.id);
-    expect(new Set(ids).size).toBe(3); // no duplicates across pages
+    expect(new Set(ids).size).toBe(3); 
   });
 });
