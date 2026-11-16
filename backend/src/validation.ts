@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const createEquipmentSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
   total_units: z
-    .number({ invalid_type_error: 'total_units must be a number' })
+    .number()
     .int('total_units must be a whole number')
     .min(1, 'total_units must be at least 1')
     .max(1000)
