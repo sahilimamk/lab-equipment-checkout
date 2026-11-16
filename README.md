@@ -2,6 +2,12 @@
 
 **Repo:** https://github.com/sahilimamk/lab-equipment-checkout
 
+**Live demo:** website https://lab-equipment-web-exus.onrender.com
+· API https://lab-equipment-api.onrender.com (try `/health`).
+Hosted on Render's free tier in its own workspace, so the free API
+sleeps after 15 minutes of no use — the first click after a quiet
+period can take about a minute to wake up.
+
 Students borrow lab equipment (oscilloscopes, multimeters, dev boards).
 Lab assistants manage the inventory. A checkout is due 7 days after it
 starts; after that it is overdue.
