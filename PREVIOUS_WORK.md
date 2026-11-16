@@ -1,9 +1,6 @@
 # Previous work — DraftShot (Game_multi)
 
 **Link:** https://github.com/sahilimamk/Game_multi
-**Live demo (as listed on the repo — verify it serves the game before
-relying on it; it has served the wrong page before):**
-https://game-multi-nf73.onrender.com/
 
 DraftShot is a solo project — I built it alone, no team.
 
@@ -26,8 +23,6 @@ pieces as finished auth or a real leaderboard.
 
 **One thing I would change if I started again:** build the auth and
 leaderboard on a real database from day one, instead of leaving them
-as placeholders while the game loop got all the attention — and verify
-the deployed demo serves the actual game before sharing its link (the
-Render deployment has served the wrong page before). That is the same
-"server decides, screen does not" lesson this take-home tests: the
-rules live in the server and are verified, not assumed.
+as placeholders while the game loop got all the attention. That is the
+same "server decides, screen does not" lesson this take-home tests:
+the rules live in the server and are verified, not assumed.

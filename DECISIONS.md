@@ -57,10 +57,11 @@ password column "for completeness".
 
 **Why:** the brief says not to build sign-up/login, and inventing auth
 would add an untested security surface to a 5–6 hour exercise. The
-header is still validated (unknown id → 401) and every rule is
-enforced server-side, so a forged header for another *student* still
-cannot see or return that student's checkouts — only an assistant's
-id can, which is the intended role boundary.
+header is trusted, as the brief says — sending another student's id
+means acting as that student. It is still validated (unknown id → 401),
+and role and ownership rules are enforced server-side for whichever
+user the header names, so a student id can only see and return its own
+checkouts, and an assistant id can see and return anyone's.
 
 ## 5. A situation the brief does not spell out: what "retire" means for existing checkouts
 

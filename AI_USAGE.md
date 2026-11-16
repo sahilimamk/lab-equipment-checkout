@@ -1,14 +1,16 @@
 # AI usage
 
-**Tool used:** Muse (Meta's personal AI assistant), in build sessions on
-14 and 16 November 2026.
+**Tools used:** Claude for planning and the overall design (the schema
+and the borrow-transaction design), and Muse (Meta's personal AI
+assistant) for drafting code, in build sessions on 14 and 16 November
+2026.
 
 **How the work was split:** I led the work. I read the brief, sketched
 the tables, set the plan step by step, made every decision in
 `DECISIONS.md`, and reviewed every endpoint against the brief's rules
 (stock never below zero, ownership, 7-day due date, case-insensitive
-names) before it went in. I knew what each step had to do before it was
-written. Muse did the repetitive, typing-heavy work for me: drafting the
+names) before it went in. Claude helped shape the plan and the design;
+Muse did the repetitive, typing-heavy work for me: drafting the
 routes, the SQL, the React screens, the test files, Docker Compose and
 the CI workflow, in the shape I had already decided.
 
@@ -39,21 +41,22 @@ the CI workflow, in the shape I had already decided.
    start from the built output. Fixed with a build-only tsconfig and
    a separate test tsconfig; the build and all tests were re-run
    after the fix.
-5. When I rewrote the code in a plain beginner style on 16 November, I
-   caught a mistake in my own rewrite of the report: my first version
-   used `SUM(CASE WHEN c.returned_at IS NULL ...)` on a `LEFT JOIN`,
-   which counts an item with no checkouts as 1 checked out, because
-   the joined row is all NULL and NULL passes the `IS NULL` check. The
-   report test caught it (an untouched item must show 0). Fixed by
-   adding `c.id IS NOT NULL` to the check, and the test passes now.
+5. When the code was rewritten in a plain beginner style on 16
+   November, the first version of the report used `SUM(CASE WHEN
+   c.returned_at IS NULL ...)` on a `LEFT JOIN`, which counts an item
+   with no checkouts as 1 checked out, because the joined row is all
+   NULL and NULL passes the `IS NULL` check. The report test caught it
+   (an untouched item must show 0). Fixed by adding `c.id IS NOT NULL`
+   to the check, and the test passes now.
 
-**What I wrote entirely myself:** the plan and the order of work, the
-decisions in `DECISIONS.md` (including the retire semantics, decision
-5), the honest `PREVIOUS_WORK.md` note about DraftShot's starter
-auth/leaderboard, the plain-style rewrite of the code on 16 November
-(no comments, no hidden helpers, transactions shown in the routes), and
-the final review of every endpoint against the brief. The decisions and
-the checking are mine; the AI did the repetitive drafting and typing.
+**What I wrote entirely myself:** nothing in the codebase was written
+entirely by me; the plan, decisions, and review were mine. The plan
+and the order of work, the decisions in `DECISIONS.md` (including the
+retire semantics, decision 5), the honest `PREVIOUS_WORK.md` note about
+DraftShot's starter auth/leaderboard, and the final review of every
+endpoint against the brief are mine. The code drafting and typing —
+including the plain-style rewrite — was done by AI, directed and
+checked by me.
 
 **The AI feature in this project:** the "Ask AI" tip box calls the
 Gemini API (`gemini-3.8-flash`) from `backend/src/routes/ai.ts`. It is

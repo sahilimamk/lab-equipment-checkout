@@ -78,6 +78,12 @@ createdb lab_checkout_test
 TEST_DATABASE_URL=postgres://lab:lab@localhost:5432/lab_checkout_test npm test
 ```
 
+No `createdb` on your machine (Docker-only setup):
+
+```bash
+docker compose exec db createdb -U lab lab_checkout_test
+```
+
 Covers: equipment list/create + duplicate + validation, borrow/return,
 ownership (403s), pagination, report counts, a concurrent-race test
 where two students request the last unit — exactly one succeeds — and
@@ -89,7 +95,11 @@ A small "Ask AI" box on the Equipment screen calls Gemini for a short
 tip about an item for a job. It is separate from the Must items: without
 a key it answers 503 and everything else still works. To turn it on,
 add `GEMINI_API_KEY=your-key` to `backend/.env` and restart the API.
-Get a key from Google AI Studio (free tier).
+Get a key from Google AI Studio (free tier). It uses
+`gemini-3.8-flash` — the model Google's own API names as the current
+one, verified live with a real key. Note: Gemini is currently refusing
+requests for this model (free-tier quota / high demand), so the box
+answers "try again later" until that clears.
 
 ## What is done / not done
 
