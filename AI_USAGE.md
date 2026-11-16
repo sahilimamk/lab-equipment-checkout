@@ -1,19 +1,21 @@
 # AI usage
 
-**Tools used:** Claude and Muse (Meta's personal AI assistant), used
-only as assistants under my direction, in build sessions on 14 and
-16 November 2026.
+**Tools used:** Claude and Muse (Meta's personal AI assistant), in build
+sessions on 14 and 16 November 2026. Claude helped with planning and
+thinking through the design; Muse drafted code from that design.
 
-**How the work was split:** all major work is mine. I designed the
-backend — the tables, the borrow transaction with the row lock,
-computed availability, the ownership rules, the report query — and I
-made every decision in `DECISIONS.md`. I wrote the code as well: I
-implemented the routes, the SQL, the React screens and the test files
-from my design, typing the implementation through, reviewing every
-line against the brief's rules (stock never below zero, ownership,
-7-day due date, case-insensitive names), and fixing it until it
-passed. AI only helped draft sections from my ideas and fill in
-boilerplate. It did not design or decide anything on its own.
+**How the work was split:** I led the work and made the major decisions.
+I read the brief, sketched the tables, set the plan step by step, and
+decided the design — the schema, the borrow transaction with the row
+lock, computed availability, the ownership rules, the report query —
+and every decision in `DECISIONS.md`. Claude helped me think through
+the plan and the design, including the schema and the borrow-transaction
+design. Muse drafted the code from that design: the routes, the SQL,
+the React screens, the test files, Docker Compose and the CI workflow.
+I reviewed every endpoint against the brief's rules (stock never below
+zero, ownership, 7-day due date, case-insensitive names) before it went
+in. I did not do this on my own — the drafting was AI's, the design
+and decisions were mine.
 
 **Where AI output was wrong or unhelpful, and how I noticed:**
 1. The first draft of `docker-compose.yml` mounted the migration and
@@ -50,13 +52,12 @@ boilerplate. It did not design or decide anything on its own.
    (an untouched item must show 0). Fixed by adding `c.id IS NOT NULL`
    to the check, and the test passes now.
 
-**What I wrote myself:** the design, the decisions, and the code are
-mine — the schema, the borrow transaction, the report logic, the
-retire semantics in decision 5, the honest `PREVIOUS_WORK.md` note
-about DraftShot's starter auth/leaderboard, and the final check of
-every endpoint against the brief. I typed and assembled the
-implementation from my design, with AI drafting help only. AI did not
-decide anything.
+**What I did myself:** the plan and the order of work, the decisions
+in `DECISIONS.md` (including the retire semantics, decision 5), the
+honest `PREVIOUS_WORK.md` note about DraftShot's starter
+auth/leaderboard, and the final review of every endpoint against the
+brief. The code was drafted by AI from my design; I directed it and
+checked every line.
 
 **The AI feature in this project:** the "Ask AI" tip box calls the
 Gemini API (`gemini-3.8-flash`) from `backend/src/routes/ai.ts`. It is
