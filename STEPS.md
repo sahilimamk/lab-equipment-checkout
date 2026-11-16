@@ -53,7 +53,7 @@ status: 400 bad input, 401 unknown user, 403 not yours, 404 not found,
 
 ## Step 3 — Tests
 
-**Files:** `backend/tests/*.ts` — 19 tests, 4 files.
+**Files:** `backend/tests/*.ts` — 21 tests, 5 files.
 
 - `equipment.test.ts` — list, create, student 403, duplicate 409,
   bad input 400, malformed JSON 400, retire blocks borrow.
@@ -62,11 +62,24 @@ status: 400 bad input, 401 unknown user, 403 not yours, 404 not found,
 - `report.test.ts` — checked-out and overdue counts from the real query.
 - `concurrency.test.ts` — two parallel borrows for the last unit,
   exactly one succeeds.
+- `ai.test.ts` — the tip endpoint answers 503 without a Gemini key, and
+  400 when the task is missing.
 
 **Run them:** `cd backend`, then
 `TEST_DATABASE_URL=postgres://lab:lab@localhost:5432/lab_checkout_test npm test`.
 The setup refuses to run unless the URL points at the test database,
 so tests can never wipe your dev data.
+
+## Step 3b — The small AI tip (stretch 13)
+
+**File:** `backend/src/routes/ai.ts`
+
+One extra route, kept apart from the Must items: `POST /api/ai/tip`
+takes an equipment id and a short task, calls the Gemini API with
+`GEMINI_API_KEY` from `.env`, and returns a 2-sentence tip in plain
+English. No key means a clear 503, never a crash, and the rest of the
+app does not need it. The Equipment screen has a small "Ask AI" box
+that calls it.
 
 ## Step 4 — The React screens
 

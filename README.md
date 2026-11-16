@@ -59,6 +59,7 @@ header. Seeded users: `stu-aria`, `stu-rohan`, `stu-meera` (students),
 | GET | `/api/checkouts/:id` | owner / assistant | |
 | POST | `/api/checkouts/:id/return` | owner / assistant | already returned → 409 |
 | GET | `/api/report/equipment-usage` | anyone | per item: checked out + overdue (JOIN + aggregate) |
+| POST | `/api/ai/tip` | anyone | `{equipment_id, task}` → short Gemini tip; no key → 503 |
 | GET | `/health` | — | no auth |
 
 Errors are always `{ "error": { "code": "...", "message": "..." } }`.
@@ -72,14 +73,23 @@ TEST_DATABASE_URL=postgres://lab:lab@localhost:5432/lab_checkout_test npm test
 ```
 
 Covers: equipment list/create + duplicate + validation, borrow/return,
-ownership (403s), pagination, report counts, and a concurrent-race test
-where two students request the last unit — exactly one succeeds.
+ownership (403s), pagination, report counts, a concurrent-race test
+where two students request the last unit — exactly one succeeds — and
+the AI tip endpoint returning 503 without a key.
+
+## Optional AI feature (stretch 13)
+
+A small "Ask AI" box on the Equipment screen calls Gemini for a short
+tip about an item for a job. It is separate from the Must items: without
+a key it answers 503 and everything else still works. To turn it on,
+add `GEMINI_API_KEY=your-key` to `backend/.env` and restart the API.
+Get a key from Google AI Studio (free tier).
 
 ## What is done / not done
 
-Done — all Must items (1–6) and Should items 7–10, plus stretch 11
-(concurrency test) and 12 (usage chart on the report screen).
-Not done — stretch 13 (no AI feature; kept the submission focused on the
-Must/Should items, see DECISIONS.md).
+Done — all Must items (1–6), all Should items 7–10, and stretch 11
+(concurrency test), 12 (usage chart on the report screen) and 13
+(Gemini tip, optional).
+Not done — nothing the brief asks for is missing.
 
 See `DECISIONS.md`, `PREVIOUS_WORK.md`, `AI_USAGE.md`.
