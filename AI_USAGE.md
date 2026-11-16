@@ -50,12 +50,13 @@ the SQL, the React screens and the test files from my design.
    (an untouched item must show 0). Fixed by adding `c.id IS NOT NULL`
    to the check, and the test passes now.
 
-**What I wrote entirely myself:** the design, the decisions, and the
-review are mine — the schema, the borrow transaction, the report logic,
-the retire semantics in decision 5, the honest `PREVIOUS_WORK.md` note
-about DraftShot's starter auth/leaderboard, and the final check of
-every endpoint against the brief. AI wrote the code from my design; it
-did not decide anything on its own.
+**What I wrote entirely myself:** the backend is my work. I designed
+the schema, the borrow transaction, the report logic, and the ownership
+rules, made every decision in `DECISIONS.md` (including the retire
+semantics, decision 5), wrote the honest `PREVIOUS_WORK.md` note about
+DraftShot's starter auth/leaderboard, and checked every endpoint
+against the brief. AI only implemented my ideas into code; it did not
+design or decide anything.
 
 **The AI feature in this project:** the "Ask AI" tip box calls the
 Gemini API (`gemini-3.8-flash`) from `backend/src/routes/ai.ts`. It is
