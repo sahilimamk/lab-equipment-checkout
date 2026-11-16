@@ -48,7 +48,9 @@ aiRouter.post('/tip', async (req, res, next) => {
       }
     );
     if (!geminiRes.ok) {
-      return res.status(502).json({ error: { code: 'AI_FAILED', message: 'Gemini did not answer. Try again later.' } });
+      const detail = await geminiRes.text();
+      console.error('Gemini call failed:', geminiRes.status, detail);
+      return res.status(502).json({ error: { code: 'AI_FAILED', message: 'Gemini did not answer. Try again later.', detail: detail.slice(0, 300) } });
     }
     const geminiBody: any = await geminiRes.json();
     const tip = geminiBody.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
