@@ -1,186 +1,216 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ApiError, api, formatDate, SEED_USERS, type Checkout, type Equipment, type ReportRow, type User } from './api';
-
-type Tab = 'equipment' | 'mine' | 'report';
-type Status = 'idle' | 'loading' | 'error' | 'empty' | 'ready';
+import { useEffect, useState } from 'react';
+import { ApiError, api, formatDate, SEED_USERS } from './api';
+import type { Checkout, Equipment, ReportRow, User } from './api';
 
 export default function App() {
   const [user, setUser] = useState<User>(SEED_USERS[0]);
-  const [tab, setTab] = useState<Tab>('equipment');
+  const [tab, setTab] = useState('equipment');
 
   const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [eqStatus, setEqStatus] = useState<Status>('idle');
+  const [eqStatus, setEqStatus] = useState('loading');
   const [eqError, setEqError] = useState('');
   const [notice, setNotice] = useState('');
-  const [noticeKind, setNoticeKind] = useState<'ok' | 'error'>('ok');
-  // In-flight ids guard Borrow / Return / Retire against double-clicks.
-  const [busy, setBusy] = useState<Set<string>>(new Set());
+  const [noticeError, setNoticeError] = useState(false);
+  const [busyId, setBusyId] = useState('');
 
-  function showNotice(text: string, kind: 'ok' | 'error' = 'ok') {
-    setNotice(text);
-    setNoticeKind(kind);
-  }
-
-  // Add-equipment form state (§5: client validation + inline server errors)
   const [name, setName] = useState('');
   const [units, setUnits] = useState('1');
-  const [formErrors, setFormErrors] = useState<{ name?: string; units?: string }>({});
+  const [nameError, setNameError] = useState('');
+  const [unitsError, setUnitsError] = useState('');
   const [serverError, setServerError] = useState('');
   const [saving, setSaving] = useState(false);
 
   const [mine, setMine] = useState<Checkout[]>([]);
-  const [mineStatus, setMineStatus] = useState<Status>('idle');
+  const [mineStatus, setMineStatus] = useState('loading');
   const [mineError, setMineError] = useState('');
   const [minePage, setMinePage] = useState(1);
   const [mineTotalPages, setMineTotalPages] = useState(1);
+
   const [report, setReport] = useState<ReportRow[]>([]);
-  const [reportStatus, setReportStatus] = useState<Status>('idle');
+  const [reportStatus, setReportStatus] = useState('loading');
   const [reportError, setReportError] = useState('');
 
-  const loadEquipment = useCallback(async () => {
+  async function loadEquipment() {
     setEqStatus('loading');
     setEqError('');
     try {
       const data = await api.listEquipment(user.id);
       setEquipment(data);
-      setEqStatus(data.length === 0 ? 'empty' : 'ready');
+      if (data.length === 0) {
+        setEqStatus('empty');
+      } else {
+        setEqStatus('ready');
+      }
     } catch (e) {
-      setEqError(e instanceof ApiError ? e.message : 'Could not load equipment');
+      if (e instanceof ApiError) {
+        setEqError(e.message);
+      } else {
+        setEqError('Could not load equipment');
+      }
       setEqStatus('error');
     }
-  }, [user.id]);
+  }
 
-  const loadMine = useCallback(
-    async (page = 1) => {
-      setMineStatus('loading');
-      setMineError('');
-      try {
-        const { data, pagination } = await api.listCheckouts(user.id, page, 10);
-        setMine(data);
-        setMinePage(pagination.page);
-        setMineTotalPages(Math.max(1, pagination.total_pages));
-        setMineStatus(data.length === 0 ? 'empty' : 'ready');
-      } catch (e) {
-        setMineError(e instanceof ApiError ? e.message : 'Could not load checkouts');
-        setMineStatus('error');
+  async function loadMine(page: number) {
+    setMineStatus('loading');
+    setMineError('');
+    try {
+      const result = await api.listCheckouts(user.id, page);
+      setMine(result.data);
+      setMinePage(result.pagination.page);
+      setMineTotalPages(Math.max(1, result.pagination.total_pages));
+      if (result.data.length === 0) {
+        setMineStatus('empty');
+      } else {
+        setMineStatus('ready');
       }
-    },
-    [user.id]
-  );
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setMineError(e.message);
+      } else {
+        setMineError('Could not load checkouts');
+      }
+      setMineStatus('error');
+    }
+  }
 
-  const loadReport = useCallback(async () => {
+  async function loadReport() {
     setReportStatus('loading');
     setReportError('');
     try {
       const data = await api.report(user.id);
       setReport(data);
-      setReportStatus(data.length === 0 ? 'empty' : 'ready');
+      if (data.length === 0) {
+        setReportStatus('empty');
+      } else {
+        setReportStatus('ready');
+      }
     } catch (e) {
-      setReportError(e instanceof ApiError ? e.message : 'Could not load report');
+      if (e instanceof ApiError) {
+        setReportError(e.message);
+      } else {
+        setReportError('Could not load report');
+      }
       setReportStatus('error');
     }
-  }, [user.id]);
+  }
 
   useEffect(() => {
     setNotice('');
     loadEquipment();
-    if (tab === 'mine') loadMine(1);
-    if (tab === 'report') loadReport();
-  }, [tab, loadEquipment, loadMine, loadReport]);
-
-  function validateForm(): boolean {
-    const errors: typeof formErrors = {};
-    if (!name.trim()) errors.name = 'Name is required';
-    // Digits only — rejects "1e3", " 2 ", "1.5"; backend also caps at 1000.
-    if (!/^\d+$/.test(units.trim()) || Number(units) < 1 || Number(units) > 1000) {
-      errors.units = 'Units must be a whole number from 1 to 1000';
+    if (tab === 'mine') {
+      loadMine(1);
     }
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (tab === 'report') {
+      loadReport();
+    }
+  }, [tab, user.id]);
+
+  function checkForm() {
+    let ok = true;
+    setNameError('');
+    setUnitsError('');
+    if (name.trim() === '') {
+      setNameError('Name is required');
+      ok = false;
+    }
+    if (!/^\d+$/.test(units.trim()) || Number(units) < 1 || Number(units) > 1000) {
+      setUnitsError('Units must be a whole number from 1 to 1000');
+      ok = false;
+    }
+    return ok;
   }
 
   async function submitEquipment(e: React.FormEvent) {
     e.preventDefault();
     setServerError('');
     setNotice('');
-    if (!validateForm()) return;
+    if (!checkForm()) {
+      return;
+    }
     setSaving(true);
     try {
       const created = await api.createEquipment(user.id, name.trim(), Number(units));
-      showNotice(`Added “${created.name}” (${created.total_units} units).`);
+      setNotice('Added ' + created.name + ' (' + created.total_units + ' units).');
+      setNoticeError(false);
       setName('');
       setUnits('1');
       await loadEquipment();
     } catch (err) {
-      // Server errors (e.g. duplicate name) shown inline, next to the form.
-      setServerError(err instanceof ApiError ? err.message : 'Could not add equipment');
-    } finally {
-      setSaving(false);
+      if (err instanceof ApiError) {
+        setServerError(err.message);
+      } else {
+        setServerError('Could not add equipment');
+      }
     }
-  }
-
-  function markBusy(key: string) {
-    setBusy((prev) => new Set(prev).add(key));
-  }
-  function clearBusy(key: string) {
-    setBusy((prev) => {
-      const next = new Set(prev);
-      next.delete(key);
-      return next;
-    });
+    setSaving(false);
   }
 
   async function borrow(eq: Equipment) {
-    const key = `borrow-${eq.id}`;
-    if (busy.has(key)) return;
     setNotice('');
-    markBusy(key);
+    setBusyId('borrow-' + eq.id);
     try {
       await api.borrow(user.id, eq.id);
-      showNotice(`Borrowed one ${eq.name}. Due in 7 days.`);
+      setNotice('Borrowed one ' + eq.name + '. Due in 7 days.');
+      setNoticeError(false);
       await loadEquipment();
     } catch (err) {
-      showNotice(err instanceof ApiError ? err.message : 'Borrow failed', 'error');
-    } finally {
-      clearBusy(key);
+      if (err instanceof ApiError) {
+        setNotice(err.message);
+      } else {
+        setNotice('Borrow failed');
+      }
+      setNoticeError(true);
     }
+    setBusyId('');
   }
 
   async function returnOne(c: Checkout) {
-    const key = `return-${c.id}`;
-    if (busy.has(key)) return;
     setNotice('');
-    markBusy(key);
+    setBusyId('return-' + c.id);
     try {
       await api.returnCheckout(user.id, c.id);
-      showNotice(`Returned ${c.equipment_name}.`);
+      setNotice('Returned ' + c.equipment_name + '.');
+      setNoticeError(false);
       await loadMine(minePage);
       await loadEquipment();
     } catch (err) {
-      showNotice(err instanceof ApiError ? err.message : 'Return failed', 'error');
-    } finally {
-      clearBusy(key);
+      if (err instanceof ApiError) {
+        setNotice(err.message);
+      } else {
+        setNotice('Return failed');
+      }
+      setNoticeError(true);
     }
+    setBusyId('');
   }
 
   async function retire(eq: Equipment) {
-    const key = `retire-${eq.id}`;
-    if (busy.has(key)) return;
     setNotice('');
-    markBusy(key);
+    setBusyId('retire-' + eq.id);
     try {
       await api.retireEquipment(user.id, eq.id);
-      showNotice(`Retired ${eq.name}. It can no longer be borrowed.`);
+      setNotice('Retired ' + eq.name + '. It can no longer be borrowed.');
+      setNoticeError(false);
       await loadEquipment();
     } catch (err) {
-      showNotice(err instanceof ApiError ? err.message : 'Retire failed', 'error');
-    } finally {
-      clearBusy(key);
+      if (err instanceof ApiError) {
+        setNotice(err.message);
+      } else {
+        setNotice('Retire failed');
+      }
+      setNoticeError(true);
     }
+    setBusyId('');
   }
 
   const isAssistant = user.role === 'assistant';
-  const maxCheckedOut = Math.max(1, ...report.map((r) => r.checked_out));
+  let maxCheckedOut = 1;
+  for (const r of report) {
+    if (r.checked_out > maxCheckedOut) {
+      maxCheckedOut = r.checked_out;
+    }
+  }
 
   return (
     <main className="wrap">
@@ -189,7 +219,13 @@ export default function App() {
         <p className="sub">Borrow lab gear. Return it in 7 days. Stock never goes below zero.</p>
         <label className="user-picker">
           Acting as:{' '}
-          <select value={user.id} onChange={(e) => setUser(SEED_USERS.find((u) => u.id === e.target.value)!)}>
+          <select
+            value={user.id}
+            onChange={(e) => {
+              const found = SEED_USERS.find((u) => u.id === e.target.value);
+              if (found) setUser(found);
+            }}
+          >
             {SEED_USERS.map((u) => (
               <option key={u.id} value={u.id}>{u.name}</option>
             ))}
@@ -203,10 +239,8 @@ export default function App() {
         <button className={tab === 'report' ? 'active' : ''} onClick={() => setTab('report')}>Usage report</button>
       </nav>
 
-      {notice && (
-        <p className={noticeKind === 'error' ? 'notice notice-error' : 'notice'} role="status">
-          {notice}
-        </p>
+      {notice !== '' && (
+        <p className={noticeError ? 'notice notice-error' : 'notice'} role="status">{notice}</p>
       )}
 
       {tab === 'equipment' && (
@@ -220,12 +254,12 @@ export default function App() {
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value);
-                    setFormErrors((p) => ({ ...p, name: undefined }));
+                    setNameError('');
                     setServerError('');
                   }}
                   placeholder="e.g. Oscilloscope"
                 />
-                {formErrors.name && <span className="field-error">{formErrors.name}</span>}
+                {nameError !== '' && <span className="field-error">{nameError}</span>}
               </label>
               <label>
                 Total units
@@ -233,20 +267,20 @@ export default function App() {
                   value={units}
                   onChange={(e) => {
                     setUnits(e.target.value);
-                    setFormErrors((p) => ({ ...p, units: undefined }));
+                    setUnitsError('');
                     setServerError('');
                   }}
                   inputMode="numeric"
                 />
-                {formErrors.units && <span className="field-error">{formErrors.units}</span>}
+                {unitsError !== '' && <span className="field-error">{unitsError}</span>}
               </label>
-              {serverError && <p className="field-error" role="alert">{serverError}</p>}
-              <button type="submit" disabled={saving}>{saving ? 'Adding…' : 'Add equipment'}</button>
+              {serverError !== '' && <p className="field-error" role="alert">{serverError}</p>}
+              <button type="submit" disabled={saving}>{saving ? 'Adding...' : 'Add equipment'}</button>
             </form>
           )}
 
           <h2>Equipment</h2>
-          {eqStatus === 'loading' && <p>Loading equipment…</p>}
+          {eqStatus === 'loading' && <p>Loading equipment...</p>}
           {eqStatus === 'error' && (
             <p className="error-box">Could not load equipment: {eqError} <button onClick={loadEquipment}>Retry</button></p>
           )}
@@ -257,26 +291,15 @@ export default function App() {
                 <li key={eq.id} className="card">
                   <strong>{eq.name}</strong>
                   {eq.retired && <span className="badge retired">Retired</span>}
-                  <span>{eq.available_units} of {eq.total_units} available · {eq.checked_out} out</span>
+                  <span>{eq.available_units} of {eq.total_units} available, {eq.checked_out} out</span>
                   <button
-                    disabled={eq.available_units <= 0 || eq.retired || busy.has(`borrow-${eq.id}`)}
+                    disabled={eq.available_units <= 0 || eq.retired || busyId === 'borrow-' + eq.id}
                     onClick={() => borrow(eq)}
-                    title={eq.retired ? 'Retired — cannot borrow' : eq.available_units <= 0 ? 'None available' : 'Borrow one unit'}
                   >
-                    {busy.has(`borrow-${eq.id}`)
-                      ? 'Borrowing…'
-                      : eq.retired
-                        ? 'Retired'
-                        : eq.available_units <= 0
-                          ? 'Not available'
-                          : 'Borrow'}
+                    {busyId === 'borrow-' + eq.id ? 'Borrowing...' : eq.retired ? 'Retired' : eq.available_units <= 0 ? 'Not available' : 'Borrow'}
                   </button>
                   {isAssistant && !eq.retired && (
-                    <button
-                      className="secondary"
-                      disabled={busy.has(`retire-${eq.id}`)}
-                      onClick={() => retire(eq)}
-                    >
+                    <button className="secondary" disabled={busyId === 'retire-' + eq.id} onClick={() => retire(eq)}>
                       Retire
                     </button>
                   )}
@@ -289,41 +312,41 @@ export default function App() {
 
       {tab === 'mine' && (
         <section>
-          <h2>My checkouts {user.role === 'assistant' ? '(all students — you are an assistant)' : ''}</h2>
-          {mineStatus === 'loading' && <p>Loading your checkouts…</p>}
+          <h2>My checkouts {user.role === 'assistant' ? '(all students, you are an assistant)' : ''}</h2>
+          {mineStatus === 'loading' && <p>Loading your checkouts...</p>}
           {mineStatus === 'error' && (
             <p className="error-box">Could not load checkouts: {mineError} <button onClick={() => loadMine(minePage)}>Retry</button></p>
           )}
           {mineStatus === 'empty' && <p>You have no checkouts yet. Borrow something from the Equipment tab.</p>}
           {mineStatus === 'ready' && (
-            <>
+            <div>
               <ul className="eq-list">
                 {mine.map((c) => (
                   <li key={c.id} className="card">
                     <strong>{c.equipment_name}</strong>
-                    <span>{c.user_name} · borrowed {formatDate(c.borrowed_at)}</span>
+                    <span>{c.user_name}, borrowed {formatDate(c.borrowed_at)}</span>
                     <span>Due {formatDate(c.due_at)}</span>
                     {c.returned_at ? (
                       <span className="badge returned">Returned {formatDate(c.returned_at)}</span>
                     ) : (
-                      <>
+                      <span>
                         {c.overdue && <span className="badge overdue">Overdue</span>}
-                        <button disabled={busy.has(`return-${c.id}`)} onClick={() => returnOne(c)}>
-                          {busy.has(`return-${c.id}`) ? 'Returning…' : 'Return'}
+                        <button disabled={busyId === 'return-' + c.id} onClick={() => returnOne(c)}>
+                          {busyId === 'return-' + c.id ? 'Returning...' : 'Return'}
                         </button>
-                      </>
+                      </span>
                     )}
                   </li>
                 ))}
               </ul>
               {mineTotalPages > 1 && (
                 <p>
-                  <button disabled={minePage <= 1} onClick={() => loadMine(minePage - 1)}>← Previous</button>{' '}
+                  <button disabled={minePage <= 1} onClick={() => loadMine(minePage - 1)}>Previous</button>{' '}
                   Page {minePage} of {mineTotalPages}{' '}
-                  <button disabled={minePage >= mineTotalPages} onClick={() => loadMine(minePage + 1)}>Next →</button>
+                  <button disabled={minePage >= mineTotalPages} onClick={() => loadMine(minePage + 1)}>Next</button>
                 </p>
               )}
-            </>
+            </div>
           )}
         </section>
       )}
@@ -331,27 +354,23 @@ export default function App() {
       {tab === 'report' && (
         <section>
           <h2>Usage report</h2>
-          <p className="sub">Checked out now, and how many of those are overdue. From one SQL JOIN + aggregate.</p>
-          {reportStatus === 'loading' && <p>Loading report…</p>}
+          <p className="sub">Checked out now, and how many of those are overdue.</p>
+          {reportStatus === 'loading' && <p>Loading report...</p>}
           {reportStatus === 'error' && (
             <p className="error-box">Could not load report: {reportError} <button onClick={loadReport}>Retry</button></p>
           )}
           {reportStatus === 'empty' && <p>No equipment yet, so there is nothing to report. Add equipment first.</p>}
           {reportStatus === 'ready' && (
-            <>
-              <p className="sub">
-                <span className="legend-blue">■</span> Checked out &nbsp;
-                <span className="legend-red">■</span> Overdue (part of checked out)
-              </p>
-              <div className="chart" aria-label="Checked-out units per item">
+            <div>
+              <div className="chart">
                 {report.map((r) => (
                   <div key={r.equipment_id} className="bar-row">
                     <span className="bar-label">{r.name}</span>
                     <div className="bar-track">
-                      <div className="bar" style={{ width: `${(r.checked_out / maxCheckedOut) * 100}%` }} />
-                      {r.overdue > 0 && <div className="bar overdue-bar" style={{ width: `${(r.overdue / maxCheckedOut) * 100}%` }} />}
+                      <div className="bar" style={{ width: (r.checked_out / maxCheckedOut) * 100 + '%' }} />
+                      {r.overdue > 0 && <div className="bar overdue-bar" style={{ width: (r.overdue / maxCheckedOut) * 100 + '%' }} />}
                     </div>
-                    <span>{r.checked_out} out{r.overdue > 0 ? ` · ${r.overdue} overdue` : ''} · {r.available_units} free</span>
+                    <span>{r.checked_out} out{r.overdue > 0 ? ', ' + r.overdue + ' overdue' : ''}, {r.available_units} free</span>
                   </div>
                 ))}
               </div>
@@ -366,7 +385,7 @@ export default function App() {
                   ))}
                 </tbody>
               </table>
-            </>
+            </div>
           )}
         </section>
       )}

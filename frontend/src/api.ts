@@ -1,10 +1,9 @@
-// Tiny typed API client. The demo "login" is just picking a seeded user;
-// the id goes out as the X-User-Id header the API trusts (brief §2).
 export interface User {
   id: string;
   name: string;
   role: 'student' | 'assistant';
 }
+
 export const SEED_USERS: User[] = [
   { id: 'stu-aria', name: 'Aria Sharma (student)', role: 'student' },
   { id: 'stu-rohan', name: 'Rohan Verma (student)', role: 'student' },
@@ -21,6 +20,7 @@ export interface Equipment {
   checked_out: number;
   available_units: number;
 }
+
 export interface Checkout {
   id: number;
   equipment_id: number;
@@ -32,6 +32,7 @@ export interface Checkout {
   returned_at: string | null;
   overdue: boolean;
 }
+
 export interface ReportRow {
   equipment_id: number;
   name: string;
@@ -42,49 +43,64 @@ export interface ReportRow {
 }
 
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    public code: string,
-    message: string
-  ) {
+  status: number;
+  code: string;
+
+  constructor(status: number, code: string, message: string) {
     super(message);
+    this.status = status;
+    this.code = code;
   }
 }
 
-async function request<T>(userId: string, path: string, init?: RequestInit): Promise<T> {
+async function request(userId: string, path: string, options?: RequestInit) {
   const res = await fetch(path, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', 'X-User-Id': userId, ...(init?.headers || {}) }
+    method: options?.method || 'GET',
+    headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
+    body: options?.body
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ApiError(res.status, body.error?.code || 'ERROR', body.error?.message || `Request failed (${res.status})`);
+    throw new ApiError(res.status, body.error?.code || 'ERROR', body.error?.message || 'Request failed');
   }
-  return body as T;
+  return body;
 }
 
 export const api = {
-  listEquipment: (u: string) => request<{ data: Equipment[] }>(u, '/api/equipment').then((r) => r.data),
-  createEquipment: (u: string, name: string, total_units: number) =>
-    request<{ data: Equipment }>(u, '/api/equipment', {
+  listEquipment: async (userId: string) => {
+    const body = await request(userId, '/api/equipment');
+    return body.data as Equipment[];
+  },
+  createEquipment: async (userId: string, name: string, total_units: number) => {
+    const body = await request(userId, '/api/equipment', {
       method: 'POST',
       body: JSON.stringify({ name, total_units })
-    }).then((r) => r.data),
-  retireEquipment: (u: string, id: number) =>
-    request(u, `/api/equipment/${id}/retire`, { method: 'PATCH' }),
-  borrow: (u: string, equipment_id: number) =>
-    request<{ data: Checkout }>(u, '/api/checkouts', {
+    });
+    return body.data as Equipment;
+  },
+  retireEquipment: async (userId: string, id: number) => {
+    await request(userId, '/api/equipment/' + id + '/retire', { method: 'PATCH' });
+  },
+  borrow: async (userId: string, equipment_id: number) => {
+    const body = await request(userId, '/api/checkouts', {
       method: 'POST',
       body: JSON.stringify({ equipment_id })
-    }).then((r) => r.data),
-  listCheckouts: (u: string, page = 1, limit = 20) =>
-    request<{ data: Checkout[]; pagination: any }>(u, `/api/checkouts?page=${page}&limit=${limit}`),
-  returnCheckout: (u: string, id: number) =>
-    request(u, `/api/checkouts/${id}/return`, { method: 'POST' }),
-  report: (u: string) =>
-    request<{ data: ReportRow[] }>(u, '/api/report/equipment-usage').then((r) => r.data)
+    });
+    return body.data as Checkout;
+  },
+  listCheckouts: async (userId: string, page: number) => {
+    const body = await request(userId, '/api/checkouts?page=' + page + '&limit=10');
+    return body as { data: Checkout[]; pagination: { page: number; total_pages: number } };
+  },
+  returnCheckout: async (userId: string, id: number) => {
+    await request(userId, '/api/checkouts/' + id + '/return', { method: 'POST' });
+  },
+  report: async (userId: string) => {
+    const body = await request(userId, '/api/report/equipment-usage');
+    return body.data as ReportRow[];
+  }
 };
 
-export function formatDate(iso: string): string {
+export function formatDate(iso: string) {
   return new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 }
