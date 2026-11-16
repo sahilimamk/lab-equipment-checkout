@@ -53,8 +53,10 @@ export class ApiError extends Error {
   }
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 async function request(userId: string, path: string, options?: RequestInit) {
-  const res = await fetch(path, {
+  const res = await fetch(API_URL + path, {
     method: options?.method || 'GET',
     headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
     body: options?.body
